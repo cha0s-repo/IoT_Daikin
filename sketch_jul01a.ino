@@ -1,21 +1,18 @@
-#include <DYIRDaikinSend.h>
-#include <DYIRDaikin.h>
-#include <DYIRDaikinBRC.h>
-#include <DYIRDaikinPWM.h>
-#include <boarddefs.h>
-#include <DYIRDaikinDef.h>
-#include <DYIRDaikinRecv.h>
+#include <Arduino.h>
+#include <IRremoteESP8266.h>
+#include <IRsend.h>
+#include <ir_Daikin.h>
 
 #include "EspMQTTClient.h"
 
 #include "private_info.h"
 
+int isTrigger = 0;
 const int ledPin =  LED_BUILTIN;// the number of the LED pin
 const int buttonPin = 13; //D7
-const int irPin = 5; //D1
+const uint16_t kIrLed = 4;  // ESP8266 GPIO pin to use. Recommended: 4 (D2).
 
-DYIRDaikin irdaikin;
-int isTrigger = 0;
+IRDaikinESP ac(kIrLed);  // Set the GPIO to be used to sending the message
 
 // PI params should put in pirvate_info.h
 EspMQTTClient client(
@@ -66,20 +63,27 @@ void onConnectionEstablished()
 
 void ACOn()
 {
-  irdaikin.on();
-  irdaikin.setSwing_off();
-  irdaikin.setMode(1);
-  irdaikin.setFan(4);//FAN speed to MAX
-  irdaikin.setTemp(25);
-  //----everything is ok and to execute send command-----
-  irdaikin.sendCommand();
+  ac.on();
+  ac.setFan(1);
+  ac.setMode(kDaikinCool);
+  ac.setTemp(25);
+  ac.setSwingVertical(false);
+  ac.setSwingHorizontal(false);
+
+  // Set the current time to 1:33PM (13:33)
+  // Time works in minutes past midnight
+  //ac.setCurrentTime(13 * 60 + 33);
+  // Turn off about 1 hour later at 2:30PM (14:30)
+  //ac.enableOffTimer(14 * 60 + 30);
+
+  ac.send();
   client.publish("IoT/DaikinIR_MSG", "Daikin AC ON");
   isTrigger = 1;
 }
 
 void ACOff()
 {
-  irdaikin.off();
+  ac.off();
   client.publish("IoT/DaikinIR_MSG", "Daikin AC OFF");
   isTrigger = 0;
 
@@ -105,12 +109,12 @@ void setup()
   Serial.println();
   pinMode(ledPin, OUTPUT);
   pinMode(buttonPin, INPUT);
-  pinMode(irPin, OUTPUT);
 
   attachInterrupt(digitalPinToInterrupt(buttonPin), buttonIRQ, FALLING);
 
   digitalWrite(ledPin, LOW);
-  irdaikin.begin(irPin);
+  ac.begin();
+
 
   // Optionnal functionnalities of EspMQTTClient : 
   client.enableDebuggingMessages(); // Enable debugging messages sent to serial output
