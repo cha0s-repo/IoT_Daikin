@@ -64,11 +64,11 @@ void onConnectionEstablished()
 void ACOn()
 {
   ac.on();
-  ac.setFan(1);
-  ac.setMode(kDaikinCool);
-  ac.setTemp(25);
-  ac.setSwingVertical(false);
-  ac.setSwingHorizontal(false);
+//  ac.setFan(kDaikinFanQuiet); //1,2,3,4,5,Auto,Quiet
+  ac.setMode(kDaikinCool); //Cool,Dry,Auto,Heat,(must set)
+  ac.setTemp(28);           // must set
+//  ac.setSwingVertical(false);
+//  ac.setSwingHorizontal(false);
 
   // Set the current time to 1:33PM (13:33)
   // Time works in minutes past midnight
@@ -84,6 +84,7 @@ void ACOn()
 void ACOff()
 {
   ac.off();
+  ac.send();
   client.publish("IoT/DaikinIR_MSG", "Daikin AC OFF");
   isTrigger = 0;
 
@@ -108,16 +109,16 @@ void setup()
   Serial.begin(115200);
   Serial.println();
   pinMode(ledPin, OUTPUT);
-  pinMode(buttonPin, INPUT);
+  //pinMode(buttonPin, INPUT);
 
-  attachInterrupt(digitalPinToInterrupt(buttonPin), buttonIRQ, FALLING);
+  //attachInterrupt(digitalPinToInterrupt(buttonPin), buttonIRQ, FALLING);
 
   digitalWrite(ledPin, LOW);
   ac.begin();
 
 
   // Optionnal functionnalities of EspMQTTClient : 
-  client.enableDebuggingMessages(); // Enable debugging messages sent to serial output
+  //client.enableDebuggingMessages(); // Enable debugging messages sent to serial output
   client.enableHTTPWebUpdater(); // Enable the web updater. User and password default to values of MQTTUsername and MQTTPassword. These can be overrited with enableHTTPWebUpdater("user", "password").
   client.enableLastWillMessage("TestClient/lastwill", "I am going offline");  // You can activate the retain flag by setting the third parameter to true
   
